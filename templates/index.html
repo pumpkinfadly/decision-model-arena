@@ -97,6 +97,15 @@
   .upl-btn.state { background: linear-gradient(135deg, #7c6cf0, #5b8def); }
   .upl-btn.qs { background: linear-gradient(135deg, #0ea5a0, #2dd4bf); color: #062726; }
   .upl-ok { color: var(--good); font-size: 12px; }
+  .hier-desc { color: var(--muted); margin-bottom: 8px; font-style: italic; }
+  .hier-level { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; border-top: 1px dashed var(--border); }
+  .hier-level:first-of-type { border-top: none; }
+  .hier-level b { color: var(--accent-2); flex: none; }
+  .hier-level .meta { color: var(--muted); }
+  .hier-level details { margin-top: 2px; }
+  .hier-level summary { cursor: pointer; color: var(--accent); font-size: 11px; }
+  .hier-opts { margin: 4px 0 6px 0; padding: 6px 10px; background: var(--panel-2); border-radius: 8px; line-height: 1.6; }
+  .hier-opts .parent { color: var(--text); font-weight: 600; }
   .hint { font-size: 12px; color: var(--muted); margin: 4px 0; }
   .addq {
     width: 100%; background: rgba(124,108,240,.1); color: var(--text);
@@ -156,6 +165,15 @@
   }
   .meta { margin-top: 8px; font-size: 11px; color: var(--muted); }
   .empty { color: var(--muted); font-size: 13px; padding: 20px 0; text-align: center; }
+  .finalpath {
+    grid-column: 1 / -1;
+    background: rgba(45, 212, 191, .08);
+    border: 1px solid var(--accent-2);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+  .finalpath b { color: var(--accent-2); font-size: 16px; }
 </style>
 </head>
 <body>
@@ -175,7 +193,7 @@
     <div class="card">
       <h2>Input state</h2>
       <textarea id="body" placeholder="Paste email / ticket / message text..."></textarea>
-      <div class="hint">contoh pasangan state + pertanyaan — 1 klik ganti keduanya:</div>
+      <div class="hint">contoh (ganti state + pertanyaan) &amp; preset laya (ganti pertanyaan saja):</div>
       <div class="chips" id="examples"></div>
       <div class="langline" id="langline"></div>
       <div class="upl" style="margin-top: 12px">
@@ -192,8 +210,12 @@
         <button class="upl-btn qs" id="qbtn" title="JSON: {qid: {type, instructions, criteria}}">&#128193; Upload Questions (JSON)</button>
         <span class="upl-ok" id="qname"></span>
       </div>
-      <div class="hint">preset pertanyaan bawaan laya:</div>
-      <div class="chips" id="presets" style="margin: 0 0 12px"></div>
+      <div id="hiernote" style="display:none; color: var(--accent-2); border:1px solid var(--accent-2); border-radius:8px; padding:6px 10px; font-size:12px; margin-bottom:10px">
+        Mode bertingkat aktif \u2014 level 1\u20134 diproses 2+ tahap predict. Klik Run predict. Klik contoh/preset lain untuk keluar.
+      </div>
+      <div id="hierinfo" style="display:none; border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:12px">
+        <div id="hierbody"></div>
+      </div>
       <div id="qlist"></div>
       <button class="addq" id="addq">+ Add question</button>
       <div class="hint">types: <b>choice</b> (pick one option) · <b>score</b> (ordered scale) · <b>noul</b> (yes / no / unknown)</div>
@@ -215,96 +237,75 @@
 <script>
 "use strict";
 
-const EXAMPLES = [
-  { label: "ID · gangguan internet", text: "Halo, internet saya dari tadi pagi tidak bisa dipakai. Lampu LOS di modem merah, sudah restart tetap sama. Ini dipakai untuk kerja, mohon segera diperbaiki.", questions: {
-    kategori: { type: "choice", instructions: "Apa maksud utama pelanggan dalam `body`?", criteria: {
-      Informasi: "pelanggan bertanya atau minta informasi",
-      Permintaan: "pelanggan meminta tindakan atau perubahan",
-      Komplain: "pelanggan menyampaikan masalah atau keluhan",
-    } },
-    jenis_gangguan: { type: "choice", instructions: "Jenis gangguan apa yang dialami pelanggan dalam `body`?", criteria: {
-      "LOS Merah": "lampu LOS pada modem/ONT menyala merah",
-      "Internet Mati": "internet sama sekali tidak bisa dipakai",
-      "Putus-Putus": "koneksi terputus berkala",
-      "Lambat": "kecepatan jauh di bawah normal",
-      "Tidak Ada Sinyal": "tidak ada sinyal sama sekali",
-    } },
-    butuh_teknisi: { type: "noul", instructions: "Apakah masalah memerlukan penanganan tim teknisi di lokasi?" },
-  } },
-  { label: "ID · tagihan tidak sesuai", text: "Halo, tagihan bulan ini kok naik ya? Saya tidak pernah minta upgrade paket. Mohon dicek dan dikoreksi tagihan saya, nomor pelanggan 1234567890.", questions: {
-    kategori: { type: "choice", instructions: "Apa maksud utama pelanggan dalam `body`?", criteria: {
-      Informasi: "pelanggan bertanya atau minta informasi",
-      Permintaan: "pelanggan meminta tindakan atau perubahan",
-      Komplain: "pelanggan menyampaikan masalah atau keluhan",
-    } },
-    masalah_billing: { type: "choice", instructions: "Masalah billing apa yang disampaikan dalam `body`?", criteria: {
-      "Tagihan Tidak Sesuai": "jumlah tagihan salah atau ada biaya tidak dikenal",
-      "Pembayaran Gagal": "pembayaran tidak berhasil diproses",
-      "Pembayaran Belum Terupdate": "sudah bayar tapi status belum berubah",
-      "Request Refund": "meminta uang dikembalikan",
-    } },
-    minta_koreksi: { type: "noul", instructions: "Apakah pelanggan meminta tagihan dikoreksi atau disesuaikan?" },
-  } },
-  { label: "ID · tanya paket", text: "Selamat pagi, mau tanya paket internet 50 Mbps harganya berapa? Ada promo untuk pelanggan lama?", questions: {
-    kategori: { type: "choice", instructions: "Apa maksud utama pelanggan dalam `body`?", criteria: {
-      Informasi: "pelanggan bertanya atau minta informasi",
-      Permintaan: "pelanggan meminta tindakan atau perubahan",
-      Komplain: "pelanggan menyampaikan masalah atau keluhan",
-    } },
-    topik_paket: { type: "choice", instructions: "Topik paket apa yang ditanyakan dalam `body`?", criteria: {
-      "Harga Paket": "berapa biaya paket internet",
-      "Benefit Paket": "apa saja keuntungan paket",
-      "Speed Paket": "kecepatan yang ditawarkan paket",
-      "Promo": "promo, diskon, atau penawaran khusus",
-    } },
-    minat_langganan: { type: "noul", instructions: "Apakah pelanggan menunjukkan minat berlangganan atau upgrade paket?" },
-  } },
-  { label: "EN · teknisi tidak datang", text: "Your technician was scheduled yesterday between 9am and 12pm but never came. No call, no message. This is the second time this month. When will someone actually show up?", questions: {
-    category: { type: "choice", instructions: "What is the customer's main intent in `body`?", criteria: {
-      Information: "asking a question or requesting info",
-      Request: "asking for an action or change",
-      Complaint: "reporting a problem or dissatisfaction",
-    } },
-    technician_issue: { type: "choice", instructions: "What is the technician-related issue in `body`?", criteria: {
-      "Technician No-show": "a scheduled visit never happened",
-      "Incomplete Handling": "visit happened but issue was not resolved",
-      "Reschedule Request": "wants to change the visit schedule",
-      "Schedule Inquiry": "asking when the technician will come",
-    } },
-    demand_escalation: { type: "noul", instructions: "Does the customer demand immediate action or escalation?" },
-  } },
-  { label: "EN · relokasi layanan", text: "I'm moving to a new apartment on the 15th. How do I transfer my internet service to the new address, and are there any relocation charges?", questions: {
-    category: { type: "choice", instructions: "What is the customer's main intent in `body`?", criteria: {
-      Information: "asking a question or requesting info",
-      Request: "asking for an action or change",
-      Complaint: "reporting a problem or dissatisfaction",
-    } },
-    installation_topic: { type: "choice", instructions: "What is the installation-related topic in `body`?", criteria: {
-      "Relocation Request": "moving existing service to a new address",
-      "New Installation": "requesting a brand-new installation",
-      "Installation Process": "asking how the installation process works",
-      "Relocation Charges": "asking about fees for moving the service",
-    } },
-    asks_fees: { type: "noul", instructions: "Does the customer ask about fees or charges?" },
-  } },
-  { label: "EN · ubah data akun", text: "I recently got married and changed my last name. How can I update the account holder details on my internet plan? What documents do you need?", questions: {
-    category: { type: "choice", instructions: "What is the customer's main intent in `body`?", criteria: {
-      Information: "asking a question or requesting info",
-      Request: "asking for an action or change",
-      Complaint: "reporting a problem or dissatisfaction",
-    } },
-    account_topic: { type: "choice", instructions: "What is the account-related topic in `body`?", criteria: {
-      "Update Account Data": "changing holder name or personal details",
-      "Account Information": "asking what data is on file",
-      "Documents Required": "asking which documents are needed",
-    } },
-    needs_agent_action: { type: "noul", instructions: "Does resolving this require agent or system action rather than just information?" },
-  } },
-];
+const EXAMPLES = [];
 
 const $ = (id) => document.getElementById(id);
 let questions = [];   // {id, type, instructions, criteria: [{label,desc}] | [string] | null}
 let uid = 0;
+let hierMode = false; // v3: questions auto-generated server-side, 2-stage predict
+let hierConfig = null; // hierarchical JSON override (from upload); null = server default
+
+function setHierMode(on, config = null) {
+  hierMode = on;
+  hierConfig = on ? config : null;
+  $("hiernote").style.display = on ? "block" : "none";
+  $("addq").style.display = on ? "none" : "block";
+  renderHierInfo(on ? config : null);
+  if (on) {
+    questions = [];
+    renderQuestions();
+  }
+}
+
+function renderHierInfo(cfg) {
+  const host = $("hierinfo");
+  const body = $("hierbody");
+  body.innerHTML = "";
+  if (!cfg || !cfg.levels) {
+    host.style.display = "none";
+    return;
+  }
+  host.style.display = "block";
+  if (cfg.description) {
+    const d = document.createElement("div");
+    d.className = "hier-desc";
+    d.textContent = cfg.description;
+    body.appendChild(d);
+  }
+  for (const [qid, q] of Object.entries(cfg.levels)) {
+    const row = document.createElement("div");
+    row.className = "hier-level";
+    const det = document.createElement("details");
+    const sum = document.createElement("summary");
+    sum.textContent = "lihat opsi";
+    det.appendChild(sum);
+    const box = document.createElement("div");
+    box.className = "hier-opts";
+    if (q.branches) {
+      const counts = Object.values(q.branches).map((b) => Object.keys(b).length);
+      const meta = document.createElement("span");
+      meta.className = "meta";
+      meta.textContent = `depends_on ${q.depends_on} \u00b7 ${Object.keys(q.branches).length} cabang \u00d7 ${Math.min(...counts)}\u2013${Math.max(...counts)} opsi`;
+      row.append(b(qid), meta, det);
+      box.innerHTML = Object.entries(q.branches)
+        .map(([parent, kids]) => `<span class="parent">${escHtml(parent)}</span> \u2192 ${escHtml(Object.keys(kids).join(", "))}`)
+        .join("<br>");
+    } else {
+      const meta = document.createElement("span");
+      meta.className = "meta";
+      meta.textContent = `${Object.keys(q.criteria || {}).length} opsi`;
+      row.append(b(qid), meta, det);
+      box.textContent = Object.keys(q.criteria || {}).join(", ");
+    }
+    det.appendChild(box);
+    body.appendChild(row);
+  }
+  function b(text) {
+    const el = document.createElement("b");
+    el.textContent = text;
+    return el;
+  }
+}
 
 /* ---------- question builder ---------- */
 
@@ -440,10 +441,13 @@ async function run() {
   btn.disabled = true;
   btn.textContent = "Running\u2026";
   try {
-    const res = await fetch("/api/predict", {
+    const payload = hierMode
+      ? { body: $("body").value, ...(hierConfig ? { questions: hierConfig } : {}) }
+      : toPayload();
+    const res = await fetch(hierMode ? "/api/predict_hierarchical" : "/api/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(toPayload()),
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -565,6 +569,12 @@ function resCard(qid, ans) {
 function renderResults(data) {
   const host = $("results");
   host.innerHTML = "";
+  if (data.final_path) {
+    const banner = document.createElement("div");
+    banner.className = "finalpath";
+    banner.innerHTML = `Hasil klasifikasi: <b>${escHtml(data.final_path)}</b>`;
+    host.appendChild(banner);
+  }
   for (const [qid, ans] of Object.entries(data.answers || {})) {
     host.appendChild(resCard(qid, ans));
   }
@@ -584,9 +594,15 @@ function stateToBody(d) {
 }
 
 function loadQuestionsDict(d) {
-  if (!d || typeof d !== "object" || Array.isArray(d)) {
-    throw new Error("question JSON harus object: {qid: {type, instructions, criteria}}");
+  if (d && typeof d === "object" && !Array.isArray(d) && d.levels) {
+    // hierarchical shape: {levels: {qid: {criteria | branches, depends_on}}}
+    setHierMode(true, d);
+    return;
   }
+  if (!d || typeof d !== "object" || Array.isArray(d)) {
+    throw new Error("question JSON harus object: {qid: {type, instructions, criteria}} atau {levels: {...}}");
+  }
+  setHierMode(false);
   questions = [];
   for (const [qid, q] of Object.entries(d)) {
     if (!q || typeof q !== "object") throw new Error(`question '${qid}': harus object`);
@@ -629,8 +645,21 @@ function initUploads() {
     const file = $("qfile").files[0];
     if (!file) return;
     try {
-      loadQuestionsDict(await readJSONFile(file));
-      $("qname").textContent = `\u2713 ${file.name}`;
+      setHierMode(false);
+      let d = await readJSONFile(file);
+      if (Array.isArray(d) || (d && typeof d === "object" && Array.isArray(d.paths))) {
+        // raw comma paths from DB -> convert server-side to hierarchical config
+        const res = await fetch("/api/convert_hierarchical", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(d),
+        });
+        const cfg = await res.json();
+        if (!res.ok) throw new Error(cfg.error || `HTTP ${res.status}`);
+        d = cfg;
+      }
+      loadQuestionsDict(d);
+      $("qname").textContent = `\u2713 ${file.name}${d && d.levels ? " \u2192 hierarki" : ""}`;
     } catch (e) {
       $("qname").textContent = "";
       showError(`questions: ${e.message}`);
@@ -645,57 +674,59 @@ function escHtml(s) {
 }
 function escAttr(s) { return escHtml(s); }
 
-function initExamples() {
-  const host = $("examples");
-  EXAMPLES.forEach((ex) => {
-    const b = document.createElement("button");
-    b.className = "chip";
-    b.textContent = ex.label;
-    b.onclick = () => {
-      $("body").value = ex.text;
-      loadQuestionsDict(ex.questions);
-      document.querySelectorAll("#examples .chip").forEach((c) => c.classList.remove("active"));
-      b.classList.add("active");
-    };
-    host.appendChild(b);
-  });
-}
+let samplesLoaded = false;
 
 function initSamples() {
   const host = $("examples");
   fetch("/api/samples")
     .then((r) => r.json())
     .then((data) => {
+      let first = true;
       for (const s of Object.values(data)) {
         const b = document.createElement("button");
         b.className = "chip";
         b.textContent = s.label;
         b.onclick = () => {
-          $("body").value = s.body;
-          loadQuestionsDict(s.questions);
+          if (s.hierarchical) {
+            setHierMode(true, s.questions && s.questions.levels ? s.questions : null);
+            $("body").value = s.body;
+          } else {
+            setHierMode(false);
+            $("body").value = s.body;
+            loadQuestionsDict(s.questions);
+          }
           document.querySelectorAll("#examples .chip").forEach((c) => c.classList.remove("active"));
           b.classList.add("active");
         };
         host.appendChild(b);
+        if (first && !samplesLoaded) {
+          first = false;
+          samplesLoaded = true;
+          b.onclick(); // default: load first sample on page open
+        }
       }
+      initPresets(); // after example chips so presets append last
     })
-    .catch(() => {});
+    .catch(() => initPresets());
 }
 
 function initPresets() {
-  const host = $("presets");
+  const host = $("examples"); // preset chips join the example chips row
   ["triage", "email", "router", "moderation"].forEach((name) => {
     const b = document.createElement("button");
     b.className = "chip";
-    b.textContent = `preset: ${name}`;
+    b.textContent = `Preset laya: ${name}`;
     b.onclick = async () => {
       try {
+        setHierMode(false);
         const res = await fetch("/api/presets");
         const data = await res.json();
         questions = [];
         for (const [qid, q] of Object.entries(data[name] || {})) {
           addQuestion({ id: qid, type: q.type, instructions: q.instructions, criteria: q.criteria });
         }
+        document.querySelectorAll("#examples .chip").forEach((c) => c.classList.remove("active"));
+        b.classList.add("active");
       } catch (e) {
         showError(`preset load failed: ${e.message}`);
       }
@@ -713,13 +744,8 @@ function showError(msg) {
 $("addq").onclick = () => addQuestion({});
 $("run").onclick = run;
 
-initExamples();
 initSamples();
-initPresets();
 initUploads();
-// default: first paired example (state + questions)
-$("body").value = EXAMPLES[0].text;
-loadQuestionsDict(EXAMPLES[0].questions);
 </script>
 </body>
 </html>

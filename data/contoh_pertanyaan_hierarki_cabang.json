@@ -1,0 +1,133 @@
+{
+  "hierarchical": true,
+  "description": "Klasifikasi bertingkat penuh: setiap level di bawah akar memakai depends_on + branches, jadi opsi tiap level ditentukan jawaban level induknya. Tanpa deskripsi opsi — mengandalkan jumlah opsi kecil per cabang plus konteks jawaban level sebelumnya yang disuntikkan ke body. Tiap level diproses laya sebagai satu pertanyaan choice non-autoregressive.",
+  "levels": {
+    "level_1": {
+      "type": "choice",
+      "instructions": "Apa maksud utama pelanggan dalam percakapan `body`?",
+      "criteria": {
+        "Informasi": null,
+        "Permintaan": null,
+        "Komplain": null
+      }
+    },
+    "level_2": {
+      "type": "choice",
+      "depends_on": "level_1",
+      "instructions": "Aspek layanan mana yang paling relevan dengan `body`?",
+      "branches": {
+        "Informasi": {
+          "Internet": null,
+          "Billing": null,
+          "Akun": null,
+          "Instalasi": null,
+          "Teknisi": null
+        },
+        "Permintaan": {
+          "Internet": null,
+          "Billing": null,
+          "Akun": null,
+          "Instalasi": null,
+          "Teknisi": null
+        },
+        "Komplain": {
+          "Internet": null,
+          "Billing": null,
+          "Instalasi": null,
+          "Teknisi": null
+        }
+      }
+    },
+    "level_3": {
+      "type": "choice",
+      "depends_on": "level_2",
+      "instructions": "Sub-kategori di bawah '{level_2}' yang paling spesifik menggambarkan `body`?",
+      "branches": {
+        "Internet": {
+          "Paket Internet": null,
+          "Kecepatan Internet": null,
+          "Gangguan Internet": null,
+          "Wi-Fi": null,
+          "Modem / ONT": null
+        },
+        "Billing": {
+          "Tagihan": null,
+          "Pembayaran": null
+        },
+        "Akun": {
+          "Data Pelanggan": null
+        },
+        "Instalasi": {
+          "Instalasi Baru": null,
+          "Relokasi": null
+        },
+        "Teknisi": {
+          "Kunjungan Teknisi": null
+        }
+      }
+    },
+    "level_4": {
+      "type": "choice",
+      "depends_on": "level_3",
+      "instructions": "Kategori spesifik di bawah '{level_3}' yang paling menggambarkan percakapan di atas?",
+      "branches": {
+        "Paket Internet": {
+          "Informasi Harga Paket": null,
+          "Informasi Benefit Paket": null,
+          "Upgrade Paket": null,
+          "Downgrade Paket": null
+        },
+        "Kecepatan Internet": {
+          "Informasi Speed Paket": null
+        },
+        "Gangguan Internet": {
+          "Cek Status Gangguan": null,
+          "Request Teknisi": null,
+          "Internet Tidak Bisa Digunakan": null,
+          "Internet Putus-Putus": null,
+          "Koneksi Lambat": null,
+          "LOS Merah": null,
+          "Tidak Ada Sinyal": null
+        },
+        "Tagihan": {
+          "Informasi Tagihan": null,
+          "Tagihan Tidak Sesuai": null
+        },
+        "Pembayaran": {
+          "Metode Pembayaran": null,
+          "Request Refund": null,
+          "Pembayaran Gagal": null,
+          "Pembayaran Belum Terupdate": null
+        },
+        "Data Pelanggan": {
+          "Informasi Data Akun": null,
+          "Perubahan Data Pelanggan": null
+        },
+        "Instalasi Baru": {
+          "Informasi Proses Instalasi": null,
+          "Pengajuan Instalasi": null,
+          "Instalasi Terlambat": null
+        },
+        "Kunjungan Teknisi": {
+          "Informasi Jadwal Teknisi": null,
+          "Reschedule Kunjungan": null,
+          "Teknisi Belum Datang": null,
+          "Penanganan Teknisi Tidak Selesai": null
+        },
+        "Wi-Fi": {
+          "Ganti Password Wi-Fi": null,
+          "Ganti Nama Wi-Fi": null,
+          "Wi-Fi Tidak Terhubung": null,
+          "Wi-Fi Sering Terputus": null
+        },
+        "Relokasi": {
+          "Pengajuan Relokasi": null
+        },
+        "Modem / ONT": {
+          "Modem Mati": null,
+          "Lampu LOS Merah": null
+        }
+      }
+    }
+  }
+}
