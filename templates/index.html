@@ -141,6 +141,13 @@
   .bar-fill { height: 100%; border-radius: 999px; background: var(--accent); transition: width .4s ease; width: 0; }
   .bar-row.winner .bar-fill { background: var(--accent-2); }
   .bar-row.winner .bar-label { color: var(--text); font-weight: 600; }
+  .bar-row.rank-2 .bar-label, .bar-row.rank-3 .bar-label { color: var(--text); }
+  .bar-row.dim { opacity: .45; }
+  .rank-badge {
+    flex: none; width: 20px; height: 18px; border-radius: 5px;
+    font-size: 10px; font-weight: 700; text-align: center; line-height: 18px;
+    color: #0f1117;
+  }
   .bar-val { flex: 0 0 44px; font-size: 12px; color: var(--muted); }
   .esc {
     margin-top: 10px; font-size: 12px; color: var(--warn);
@@ -168,6 +175,7 @@
     <div class="card">
       <h2>Input state</h2>
       <textarea id="body" placeholder="Paste email / ticket / message text..."></textarea>
+      <div class="hint">contoh pasangan state + pertanyaan — 1 klik ganti keduanya:</div>
       <div class="chips" id="examples"></div>
       <div class="langline" id="langline"></div>
       <div class="upl" style="margin-top: 12px">
@@ -184,8 +192,7 @@
         <button class="upl-btn qs" id="qbtn" title="JSON: {qid: {type, instructions, criteria}}">&#128193; Upload Questions (JSON)</button>
         <span class="upl-ok" id="qname"></span>
       </div>
-      <div class="hint">contoh lengkap (input + pertanyaan):</div>
-      <div class="chips" id="samples" style="margin: 0 0 10px"></div>
+      <div class="hint">preset pertanyaan bawaan laya:</div>
       <div class="chips" id="presets" style="margin: 0 0 12px"></div>
       <div id="qlist"></div>
       <button class="addq" id="addq">+ Add question</button>
@@ -209,12 +216,90 @@
 "use strict";
 
 const EXAMPLES = [
-  { label: "ID · gangguan internet", text: "Halo, internet saya dari tadi pagi tidak bisa dipakai. Lampu LOS di modem merah, sudah restart tetap sama. Ini dipakai untuk kerja, mohon segera diperbaiki." },
-  { label: "ID · tagihan tidak sesuai", text: "Halo, tagihan bulan ini kok naik ya? Saya tidak pernah minta upgrade paket. Mohon dicek dan dikoreksi tagihan saya, nomor pelanggan 1234567890." },
-  { label: "ID · tanya paket", text: "Selamat pagi, mau tanya paket internet 50 Mbps harganya berapa? Ada promo untuk pelanggan lama?" },
-  { label: "EN · duplicate charge", text: "Hi, I was charged twice for invoice 4411 this morning. Please refund the extra payment to my card." },
-  { label: "EN · angry outage", text: "This is the THIRD day your service is down and nobody answers my emails. Unacceptable. I want to cancel my subscription immediately." },
-  { label: "EN · neutral question", text: "Hi, quick question: what are your business hours on public holidays?" },
+  { label: "ID · gangguan internet", text: "Halo, internet saya dari tadi pagi tidak bisa dipakai. Lampu LOS di modem merah, sudah restart tetap sama. Ini dipakai untuk kerja, mohon segera diperbaiki.", questions: {
+    kategori: { type: "choice", instructions: "Apa maksud utama pelanggan dalam `body`?", criteria: {
+      Informasi: "pelanggan bertanya atau minta informasi",
+      Permintaan: "pelanggan meminta tindakan atau perubahan",
+      Komplain: "pelanggan menyampaikan masalah atau keluhan",
+    } },
+    jenis_gangguan: { type: "choice", instructions: "Jenis gangguan apa yang dialami pelanggan dalam `body`?", criteria: {
+      "LOS Merah": "lampu LOS pada modem/ONT menyala merah",
+      "Internet Mati": "internet sama sekali tidak bisa dipakai",
+      "Putus-Putus": "koneksi terputus berkala",
+      "Lambat": "kecepatan jauh di bawah normal",
+      "Tidak Ada Sinyal": "tidak ada sinyal sama sekali",
+    } },
+    butuh_teknisi: { type: "noul", instructions: "Apakah masalah memerlukan penanganan tim teknisi di lokasi?" },
+  } },
+  { label: "ID · tagihan tidak sesuai", text: "Halo, tagihan bulan ini kok naik ya? Saya tidak pernah minta upgrade paket. Mohon dicek dan dikoreksi tagihan saya, nomor pelanggan 1234567890.", questions: {
+    kategori: { type: "choice", instructions: "Apa maksud utama pelanggan dalam `body`?", criteria: {
+      Informasi: "pelanggan bertanya atau minta informasi",
+      Permintaan: "pelanggan meminta tindakan atau perubahan",
+      Komplain: "pelanggan menyampaikan masalah atau keluhan",
+    } },
+    masalah_billing: { type: "choice", instructions: "Masalah billing apa yang disampaikan dalam `body`?", criteria: {
+      "Tagihan Tidak Sesuai": "jumlah tagihan salah atau ada biaya tidak dikenal",
+      "Pembayaran Gagal": "pembayaran tidak berhasil diproses",
+      "Pembayaran Belum Terupdate": "sudah bayar tapi status belum berubah",
+      "Request Refund": "meminta uang dikembalikan",
+    } },
+    minta_koreksi: { type: "noul", instructions: "Apakah pelanggan meminta tagihan dikoreksi atau disesuaikan?" },
+  } },
+  { label: "ID · tanya paket", text: "Selamat pagi, mau tanya paket internet 50 Mbps harganya berapa? Ada promo untuk pelanggan lama?", questions: {
+    kategori: { type: "choice", instructions: "Apa maksud utama pelanggan dalam `body`?", criteria: {
+      Informasi: "pelanggan bertanya atau minta informasi",
+      Permintaan: "pelanggan meminta tindakan atau perubahan",
+      Komplain: "pelanggan menyampaikan masalah atau keluhan",
+    } },
+    topik_paket: { type: "choice", instructions: "Topik paket apa yang ditanyakan dalam `body`?", criteria: {
+      "Harga Paket": "berapa biaya paket internet",
+      "Benefit Paket": "apa saja keuntungan paket",
+      "Speed Paket": "kecepatan yang ditawarkan paket",
+      "Promo": "promo, diskon, atau penawaran khusus",
+    } },
+    minat_langganan: { type: "noul", instructions: "Apakah pelanggan menunjukkan minat berlangganan atau upgrade paket?" },
+  } },
+  { label: "EN · teknisi tidak datang", text: "Your technician was scheduled yesterday between 9am and 12pm but never came. No call, no message. This is the second time this month. When will someone actually show up?", questions: {
+    category: { type: "choice", instructions: "What is the customer's main intent in `body`?", criteria: {
+      Information: "asking a question or requesting info",
+      Request: "asking for an action or change",
+      Complaint: "reporting a problem or dissatisfaction",
+    } },
+    technician_issue: { type: "choice", instructions: "What is the technician-related issue in `body`?", criteria: {
+      "Technician No-show": "a scheduled visit never happened",
+      "Incomplete Handling": "visit happened but issue was not resolved",
+      "Reschedule Request": "wants to change the visit schedule",
+      "Schedule Inquiry": "asking when the technician will come",
+    } },
+    demand_escalation: { type: "noul", instructions: "Does the customer demand immediate action or escalation?" },
+  } },
+  { label: "EN · relokasi layanan", text: "I'm moving to a new apartment on the 15th. How do I transfer my internet service to the new address, and are there any relocation charges?", questions: {
+    category: { type: "choice", instructions: "What is the customer's main intent in `body`?", criteria: {
+      Information: "asking a question or requesting info",
+      Request: "asking for an action or change",
+      Complaint: "reporting a problem or dissatisfaction",
+    } },
+    installation_topic: { type: "choice", instructions: "What is the installation-related topic in `body`?", criteria: {
+      "Relocation Request": "moving existing service to a new address",
+      "New Installation": "requesting a brand-new installation",
+      "Installation Process": "asking how the installation process works",
+      "Relocation Charges": "asking about fees for moving the service",
+    } },
+    asks_fees: { type: "noul", instructions: "Does the customer ask about fees or charges?" },
+  } },
+  { label: "EN · ubah data akun", text: "I recently got married and changed my last name. How can I update the account holder details on my internet plan? What documents do you need?", questions: {
+    category: { type: "choice", instructions: "What is the customer's main intent in `body`?", criteria: {
+      Information: "asking a question or requesting info",
+      Request: "asking for an action or change",
+      Complaint: "reporting a problem or dissatisfaction",
+    } },
+    account_topic: { type: "choice", instructions: "What is the account-related topic in `body`?", criteria: {
+      "Update Account Data": "changing holder name or personal details",
+      "Account Information": "asking what data is on file",
+      "Documents Required": "asking which documents are needed",
+    } },
+    needs_agent_action: { type: "noul", instructions: "Does resolving this require agent or system action rather than just information?" },
+  } },
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -379,16 +464,30 @@ function confColor(c) {
   return "var(--bad)";
 }
 
-function barRow(label, p, winner, color) {
+const RANK_STYLE = {
+  1: "var(--accent-2)",
+  2: "var(--warn)",
+  3: "#60a5fa",
+};
+
+function barRow(label, p, opts = {}) {
+  const rank = opts.rank ?? null;
   const row = document.createElement("div");
-  row.className = "bar-row" + (winner ? " winner" : "");
+  row.className = "bar-row" + (rank ? ` rank-${rank}` : "") + (rank === 1 ? " winner" : "");
+  if (opts.dim) row.classList.add("dim");
+  const badge = rank
+    ? `<span class="rank-badge" style="background:${RANK_STYLE[rank]}">${rank}</span>`
+    : "";
   row.innerHTML = `
+    ${badge}
     <span class="bar-label" title="${escAttr(label)}">${escHtml(label)}</span>
     <div class="bar-track"><div class="bar-fill"></div></div>
     <span class="bar-val">${(p * 100).toFixed(1)}%</span>`;
-  if (color) row.querySelector(".bar-fill").style.background = color;
+  const fill = row.querySelector(".bar-fill");
+  if (opts.color) fill.style.background = opts.color;
+  else if (rank) fill.style.background = RANK_STYLE[rank];
   requestAnimationFrame(() => {
-    row.querySelector(".bar-fill").style.width = `${Math.min(100, p * 100)}%`;
+    fill.style.width = `${Math.min(100, p * 100)}%`;
   });
   return row;
 }
@@ -413,9 +512,20 @@ function resCard(qid, ans) {
     verdict.innerHTML = `${escHtml(ans.choice ?? "?")}<small>chosen option</small>`;
     card.appendChild(verdict);
     const probs = ans.probabilities || {};
-    const maxK = Object.keys(probs).reduce((a, b) => (probs[a] >= probs[b] ? a : b), "?");
-    for (const [opt, p] of Object.entries(probs)) {
-      card.appendChild(barRow(opt, p, opt === maxK));
+    const entries = Object.entries(probs);
+    const many = entries.length > 5; // highlight top 3 only when option count large
+    const order = many ? entries.slice().sort((a, b) => b[1] - a[1]) : entries;
+    let top3;
+    if (many) {
+      top3 = order.slice(0, 3).map((e) => e[0]);
+    } else {
+      let maxK = "?", maxP = -1;
+      for (const [k, p] of entries) if (p > maxP) { maxP = p; maxK = k; }
+      top3 = [maxK];
+    }
+    for (const [k, p] of order) {
+      const rank = top3.indexOf(k) + 1 || null;
+      card.appendChild(barRow(k, p, { rank, dim: many && !rank }));
     }
   } else if (ans.type === "noul") {
     const yes = ans.yes ?? 0;
@@ -423,8 +533,8 @@ function resCard(qid, ans) {
     verdict.className = "verdict";
     verdict.innerHTML = `${yes >= 0.5 ? "Yes" : "No"}<small>P(yes) = ${(yes * 100).toFixed(1)}%</small>`;
     card.appendChild(verdict);
-    card.appendChild(barRow("yes", yes, false, yes >= 0.5 ? "var(--accent-2)" : "var(--accent)"));
-    card.appendChild(barRow("no", 1 - yes, false));
+    card.appendChild(barRow("yes", yes, { color: yes >= 0.5 ? "var(--accent-2)" : "var(--accent)" }));
+    card.appendChild(barRow("no", 1 - yes, {}));
   } else if (ans.type === "score") {
     const legend = ans.legend || {};
     const n = Object.keys(legend).length || 1;
@@ -435,7 +545,7 @@ function resCard(qid, ans) {
     const probs = ans.probabilities || {};
     const maxK = Object.keys(probs).reduce((a, b) => (probs[a] >= probs[b] ? a : b), "?");
     for (const [lvl, p] of Object.entries(probs)) {
-      card.appendChild(barRow(`${lvl} \u00b7 ${legend[lvl] ?? ""}`, p, lvl === maxK));
+      card.appendChild(barRow(`${lvl} \u00b7 ${legend[lvl] ?? ""}`, p, { rank: lvl === maxK ? 1 : null }));
     }
   }
 
@@ -543,6 +653,7 @@ function initExamples() {
     b.textContent = ex.label;
     b.onclick = () => {
       $("body").value = ex.text;
+      loadQuestionsDict(ex.questions);
       document.querySelectorAll("#examples .chip").forEach((c) => c.classList.remove("active"));
       b.classList.add("active");
     };
@@ -551,7 +662,7 @@ function initExamples() {
 }
 
 function initSamples() {
-  const host = $("samples");
+  const host = $("examples");
   fetch("/api/samples")
     .then((r) => r.json())
     .then((data) => {
@@ -561,11 +672,8 @@ function initSamples() {
         b.textContent = s.label;
         b.onclick = () => {
           $("body").value = s.body;
-          questions = [];
-          for (const [qid, q] of Object.entries(s.questions || {})) {
-            addQuestion({ id: qid, type: q.type, instructions: q.instructions, criteria: q.criteria });
-          }
-          document.querySelectorAll("#samples .chip").forEach((c) => c.classList.remove("active"));
+          loadQuestionsDict(s.questions);
+          document.querySelectorAll("#examples .chip").forEach((c) => c.classList.remove("active"));
           b.classList.add("active");
         };
         host.appendChild(b);
@@ -609,17 +717,9 @@ initExamples();
 initSamples();
 initPresets();
 initUploads();
-// start with triage preset shape, prefilled
-addQuestion({ id: "department", type: "choice", instructions: "Which team should handle `body`?", criteria: {
-  billing: "invoices, payments, refunds, duplicate charges",
-  technical: "bugs, errors, crashes, login problems",
-  sales: "pricing, demos, upgrades, new accounts",
-}});
-addQuestion({ id: "refund_requested", type: "noul", instructions: "Does the sender ask for money back?" });
-addQuestion({ id: "frustration", type: "score", instructions: "How frustrated does the sender sound in `body`?", criteria: [
-  "calm and neutral", "concerned but civil", "clearly annoyed", "very angry",
-]});
+// default: first paired example (state + questions)
 $("body").value = EXAMPLES[0].text;
+loadQuestionsDict(EXAMPLES[0].questions);
 </script>
 </body>
 </html>

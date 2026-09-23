@@ -1,10 +1,11 @@
-"""Run the ISP sample (transcript state + single category question) via API."""
+"""Run the ISP samples (v1 full-path options, v2 leaf-only options) via API."""
 import json
+import sys
 import urllib.request
 
-s = json.load(urllib.request.urlopen("http://127.0.0.1:5001/api/samples", timeout=15))[
-    "gangguan_internet_id"
-]
+key = sys.argv[1] if len(sys.argv) > 1 else "gangguan_internet_id"
+s = json.load(urllib.request.urlopen("http://127.0.0.1:5001/api/samples", timeout=15))[key]
+print("label:", s["label"])
 print("questions:", list(s["questions"]))
 
 req = urllib.request.Request(

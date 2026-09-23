@@ -1,4 +1,4 @@
-"""Web playground for convaiinnovations/laya-multilingual.
+r"""Web playground for convaiinnovations/laya-multilingual.
 
 Flask serves a single page; /api/predict runs agent.predict().
 Run:  .venv\Scripts\python.exe app.py  ->  http://127.0.0.1:5001
@@ -48,19 +48,38 @@ def _load_question_file(path):
 
 
 def load_samples():
-    """Build playground samples from files in data/."""
-    samples = {}
+    """Build playground samples from files in data/.
+
+    Each sample: (key, state file, questions file, chip label).
+    v1 category options are full 4-level paths; v2 uses leaf category
+    names only. Both exceed the model card's ~20-option guidance.
+    """
     state_path = os.path.join(DATA_DIR, "simulasi_chat_gangguan_internet.json")
-    q_path = os.path.join(DATA_DIR, "contoh_pertanyaan_category.json")
-    if os.path.exists(state_path):
-        with open(state_path, encoding="utf-8") as f:
-            data = json.load(f)
-        body = "\n".join(
-            f"{t.get('role', '?')}: {t.get('message', '')}".strip()
-            for t in data.get("transcript", [])
-        )
-        samples["gangguan_internet_id"] = {
-            "label": "Contoh: ISP \u00b7 gangguan internet (ID)",
+    defs = [
+        (
+            "gangguan_internet_id",
+            "contoh_pertanyaan_category.json",
+            "Contoh: ISP \u00b7 gangguan internet (ID)",
+        ),
+        (
+            "gangguan_internet_id_v2",
+            "contoh_pertanyaan_category_v2.json",
+            "Contoh v2: ISP \u00b7 gangguan internet (kategori inti)",
+        ),
+    ]
+    if not os.path.exists(state_path):
+        return {}
+    with open(state_path, encoding="utf-8") as f:
+        data = json.load(f)
+    body = "\n".join(
+        f"{t.get('role', '?')}: {t.get('message', '')}".strip()
+        for t in data.get("transcript", [])
+    )
+    samples = {}
+    for key, q_file, label in defs:
+        q_path = os.path.join(DATA_DIR, q_file)
+        samples[key] = {
+            "label": label,
             "body": body,
             "questions": _load_question_file(q_path) if os.path.exists(q_path) else {},
         }

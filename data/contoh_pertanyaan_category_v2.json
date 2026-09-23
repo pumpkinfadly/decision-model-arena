@@ -1,0 +1,42 @@
+{
+  "category": {
+    "type": "choice",
+    "instructions": "Klasifikasikan topik utama percakapan customer service ini ke dalam salah satu kategori berikut.",
+    "criteria": {
+      "Informasi Harga Paket": null,
+      "Informasi Benefit Paket": null,
+      "Informasi Speed Paket": null,
+      "Cek Status Gangguan": null,
+      "Informasi Tagihan": null,
+      "Metode Pembayaran": null,
+      "Informasi Data Akun": null,
+      "Informasi Proses Instalasi": null,
+      "Informasi Jadwal Teknisi": null,
+      "Upgrade Paket": null,
+      "Downgrade Paket": null,
+      "Ganti Password Wi-Fi": null,
+      "Ganti Nama Wi-Fi": null,
+      "Request Teknisi": null,
+      "Request Refund": null,
+      "Perubahan Data Pelanggan": null,
+      "Pengajuan Instalasi": null,
+      "Pengajuan Relokasi": null,
+      "Reschedule Kunjungan": null,
+      "Internet Tidak Bisa Digunakan": null,
+      "Internet Putus-Putus": null,
+      "Koneksi Lambat": null,
+      "LOS Merah": null,
+      "Tidak Ada Sinyal": null,
+      "Wi-Fi Tidak Terhubung": null,
+      "Wi-Fi Sering Terputus": null,
+      "Modem Mati": null,
+      "Lampu LOS Merah": null,
+      "Tagihan Tidak Sesuai": null,
+      "Pembayaran Gagal": null,
+      "Pembayaran Belum Terupdate": null,
+      "Instalasi Terlambat": null,
+      "Teknisi Belum Datang": null,
+      "Penanganan Teknisi Tidak Selesai": null
+    }
+  }
+}
