@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>laya-multilingual playground</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --panel-2: #1d2130;
+    --border: #2a2f42;
+    --text: #e7eaf3;
+    --muted: #8b93a8;
+    --accent: #7c6cf0;
+    --accent-2: #2dd4bf;
+    --good: #34d399;
+    --warn: #fbbf24;
+    --bad: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  header { padding: 18px 24px 10px; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: .3px; }
+  header h1 .accent { color: var(--accent-2); }
+  .badges { margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    font-size: 11px; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 2px 10px;
+  }
+  main { padding: 8px 24px 40px; max-width: 1280px; margin: 0 auto; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 980px) { .cols { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;
+  }
+  .card h2 {
+    margin: 0 0 10px; font-size: 13px; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted); font-weight: 600;
+  }
+  textarea, input[type=text], select {
+    width: 100%; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font: inherit;
+  }
+  textarea { min-height: 170px; resize: vertical; }
+  textarea:focus, input:focus, select:focus { outline: 1px solid var(--accent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip {
+    background: transparent; color: var(--muted); cursor: pointer;
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 3px 12px; font-size: 12px;
+  }
+  .chip:hover { color: var(--text); border-color: var(--accent); }
+  .chip.active { color: var(--text); border-color: var(--accent); background: rgba(124,108,240,.12); }
+  .langline { margin-top: 8px; font-size: 12px; color: var(--muted); min-height: 16px; }
+  .langline b { color: var(--accent-2); }
+
+  .qcard {
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 10px;
+  }
+  .qrow { display: flex; gap: 8px; margin-bottom: 8px; }
+  .qrow input[type=text] { flex: 1; }
+  .qrow select { width: 110px; flex: none; }
+  .del {
+    flex: none; background: transparent; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 8px;
+    width: 34px; cursor: pointer; font-size: 14px;
+  }
+  .del:hover { color: var(--bad); border-color: var(--bad); }
+  .optrow { display: flex; gap: 8px; margin-bottom: 6px; }
+  .optrow input { font-size: 13px; }
+  .optrow .k { flex: 2; } .optrow .v { flex: 3; }
+  .optrow .idx { flex: none; width: 26px; color: var(--muted); font-size: 12px; padding-top: 8px; text-align: right; }
+  .mini {
+    background: transparent; color: var(--muted); cursor: pointer;
+    border: 1px dashed var(--border); border-radius: 8px;
+    padding: 3px 10px; font-size: 12px; margin-top: 2px;
+  }
+  .mini:hover { color: var(--text); border-color: var(--accent); }
+  .upl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .upl-btn {
+    border: none; border-radius: 8px; padding: 8px 18px;
+    font-size: 13px; font-weight: 600; cursor: pointer; color: #fff;
+    transition: filter .15s, transform .05s;
+  }
+  .upl-btn:hover { filter: brightness(1.18); }
+  .upl-btn:active { transform: translateY(1px); }
+  .upl-btn.state { background: linear-gradient(135deg, #7c6cf0, #5b8def); }
+  .upl-btn.qs { background: linear-gradient(135deg, #0ea5a0, #2dd4bf); color: #062726; }
+  .upl-ok { color: var(--good); font-size: 12px; }
+  .hint { font-size: 12px; color: var(--muted); margin: 4px 0; }
+  .addq {
+    width: 100%; background: rgba(124,108,240,.1); color: var(--text);
+    border: 1px dashed var(--accent); border-radius: 10px;
+    padding: 8px; cursor: pointer; font-size: 13px;
+  }
+  .addq:hover { background: rgba(124,108,240,.2); }
+
+  .runbar { display: flex; align-items: center; gap: 14px; margin: 4px 0 18px; }
+  .run {
+    background: var(--accent); color: #fff; border: none; cursor: pointer;
+    border-radius: 10px; padding: 10px 26px; font-size: 15px; font-weight: 600;
+  }
+  .run:disabled { opacity: .5; cursor: wait; }
+  .usage { font-size: 12px; color: var(--muted); }
+  .error {
+    display: none; background: rgba(248,113,113,.1); color: var(--bad);
+    border: 1px solid var(--bad); border-radius: 10px;
+    padding: 8px 14px; margin-bottom: 14px; font-size: 13px;
+  }
+
+  .rgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 980px) { .rgrid { grid-template-columns: 1fr; } }
+  .res {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .res-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .res-head .name { font-weight: 600; font-size: 15px; }
+  .tbadge {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    border: 1px solid var(--accent-2); color: var(--accent-2);
+    border-radius: 999px; padding: 1px 8px;
+  }
+  .conf { margin-left: auto; font-size: 12px; }
+  .conf b { font-size: 14px; }
+  .verdict { font-size: 22px; font-weight: 700; margin: 2px 0 10px; }
+  .verdict small { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+  .bar-label { flex: 0 0 170px; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+  .bar-track { flex: 1; background: var(--panel-2); border-radius: 999px; height: 14px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; background: var(--accent); transition: width .4s ease; width: 0; }
+  .bar-row.winner .bar-fill { background: var(--accent-2); }
+  .bar-row.winner .bar-label { color: var(--text); font-weight: 600; }
+  .bar-val { flex: 0 0 44px; font-size: 12px; color: var(--muted); }
+  .esc {
+    margin-top: 10px; font-size: 12px; color: var(--warn);
+    background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.35);
+    border-radius: 8px; padding: 5px 10px;
+  }
+  .meta { margin-top: 8px; font-size: 11px; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 13px; padding: 20px 0; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>laya-<span class="accent">multilingual</span> playground</h1>
+  <div class="badges">
+    <span class="badge">322M</span>
+    <span class="badge">non-autoregressive · one forward pass</span>
+    <span class="badge">contoh bahasa: Indonesia · English</span>
+    <span class="badge">1024 tokens / question</span>
+    <span class="badge">Apache-2.0</span>
+  </div>
+</header>
+
+<main>
+  <div class="cols">
+    <div class="card">
+      <h2>Input state</h2>
+      <textarea id="body" placeholder="Paste email / ticket / message text..."></textarea>
+      <div class="chips" id="examples"></div>
+      <div class="langline" id="langline"></div>
+      <div class="upl" style="margin-top: 12px">
+        <input type="file" id="statefile" accept=".json,application/json" hidden>
+        <button class="upl-btn state" id="statebtn" title="JSON: {transcript: [...]} atau {body: \"...\"}">&#128193; Upload State (JSON)</button>
+        <span class="upl-ok" id="statename"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Questions</h2>
+      <div class="upl" style="margin: 0 0 12px">
+        <input type="file" id="qfile" accept=".json,application/json" hidden>
+        <button class="upl-btn qs" id="qbtn" title="JSON: {qid: {type, instructions, criteria}}">&#128193; Upload Questions (JSON)</button>
+        <span class="upl-ok" id="qname"></span>
+      </div>
+      <div class="hint">contoh lengkap (input + pertanyaan):</div>
+      <div class="chips" id="samples" style="margin: 0 0 10px"></div>
+      <div class="chips" id="presets" style="margin: 0 0 12px"></div>
+      <div id="qlist"></div>
+      <button class="addq" id="addq">+ Add question</button>
+      <div class="hint">types: <b>choice</b> (pick one option) · <b>score</b> (ordered scale) · <b>noul</b> (yes / no / unknown)</div>
+    </div>
+  </div>
+
+  <div class="error" id="error"></div>
+
+  <div class="runbar">
+    <button class="run" id="run">Run predict</button>
+    <span class="usage" id="usage"></span>
+  </div>
+
+  <div class="rgrid" id="results">
+    <div class="empty">results appear here</div>
+  </div>
+</main>
+
+<script>
+"use strict";
+
+const EXAMPLES = [
+  { label: "ID · gangguan internet", text: "Halo, internet saya dari tadi pagi tidak bisa dipakai. Lampu LOS di modem merah, sudah restart tetap sama. Ini dipakai untuk kerja, mohon segera diperbaiki." },
+  { label: "ID · tagihan tidak sesuai", text: "Halo, tagihan bulan ini kok naik ya? Saya tidak pernah minta upgrade paket. Mohon dicek dan dikoreksi tagihan saya, nomor pelanggan 1234567890." },
+  { label: "ID · tanya paket", text: "Selamat pagi, mau tanya paket internet 50 Mbps harganya berapa? Ada promo untuk pelanggan lama?" },
+  { label: "EN · duplicate charge", text: "Hi, I was charged twice for invoice 4411 this morning. Please refund the extra payment to my card." },
+  { label: "EN · angry outage", text: "This is the THIRD day your service is down and nobody answers my emails. Unacceptable. I want to cancel my subscription immediately." },
+  { label: "EN · neutral question", text: "Hi, quick question: what are your business hours on public holidays?" },
+];
+
+const $ = (id) => document.getElementById(id);
+let questions = [];   // {id, type, instructions, criteria: [{label,desc}] | [string] | null}
+let uid = 0;
+
+/* ---------- question builder ---------- */
+
+function addQuestion(q) {
+  const item = {
+    id: q.id || `q${++uid}`,
+    type: q.type || "choice",
+    instructions: q.instructions || "",
+  };
+  if (item.type === "choice") {
+    item.criteria = Object.entries(q.criteria || {}).map(([label, desc]) => ({ label, desc }));
+    if (!item.criteria.length) item.criteria = [{ label: "", desc: "" }];
+  } else if (item.type === "score") {
+    item.criteria = (q.criteria || []).map(String);
+    if (!item.criteria.length) item.criteria = [""];
+  }
+  questions.push(item);
+  renderQuestions();
+}
+
+function renderQuestions() {
+  const host = $("qlist");
+  host.innerHTML = "";
+  questions.forEach((q, i) => {
+    const card = document.createElement("div");
+    card.className = "qcard";
+
+    const row = document.createElement("div");
+    row.className = "qrow";
+    row.innerHTML = `
+      <input type="text" placeholder="question name" value="${escAttr(q.id)}">
+      <select>
+        <option value="choice">choice</option>
+        <option value="score">score</option>
+        <option value="noul">noul</option>
+      </select>
+      <button class="del" title="remove">\u00d7</button>`;
+    const [nameEl, typeEl, delEl] = row.children;
+    typeEl.value = q.type;
+    nameEl.oninput = () => (q.id = nameEl.value);
+    typeEl.onchange = () => {
+      q.type = typeEl.value;
+      q.criteria = null;
+      if (q.type === "choice") q.criteria = [{ label: "", desc: "" }];
+      if (q.type === "score") q.criteria = [""];
+      renderQuestions();
+    };
+    delEl.onclick = () => { questions.splice(i, 1); renderQuestions(); };
+    card.appendChild(row);
+
+    const instr = document.createElement("input");
+    instr.type = "text";
+    instr.placeholder = "instructions \u2014 what should the model decide about `body`?";
+    instr.value = q.instructions;
+    instr.oninput = () => (q.instructions = instr.value);
+    card.appendChild(instr);
+
+    const crit = document.createElement("div");
+    crit.style.marginTop = "8px";
+    if (q.type === "choice") {
+      crit.innerHTML = '<div class="hint">options \u2014 label : description of when it applies</div>';
+      q.criteria.forEach((opt, j) => {
+        const r = document.createElement("div");
+        r.className = "optrow";
+        r.innerHTML = `
+          <input type="text" class="k" placeholder="option label" value="${escAttr(opt.label)}">
+          <input type="text" class="v" placeholder="when this option applies" value="${escAttr(opt.desc)}">
+          <button class="del">\u00d7</button>`;
+        const [k, v, d] = r.children;
+        k.oninput = () => (opt.label = k.value);
+        v.oninput = () => (opt.desc = v.value);
+        d.onclick = () => { q.criteria.splice(j, 1); renderQuestions(); };
+        crit.appendChild(r);
+      });
+      const add = document.createElement("button");
+      add.className = "mini";
+      add.textContent = "+ option";
+      add.onclick = () => { q.criteria.push({ label: "", desc: "" }); renderQuestions(); };
+      crit.appendChild(add);
+    } else if (q.type === "score") {
+      crit.innerHTML = '<div class="hint">ordered levels \u2014 lowest first, highest last</div>';
+      q.criteria.forEach((lvl, j) => {
+        const r = document.createElement("div");
+        r.className = "optrow";
+        r.innerHTML = `
+          <span class="idx">${j}</span>
+          <input type="text" class="v" placeholder="level description" value="${escAttr(lvl)}">
+          <button class="del">\u00d7</button>`;
+        const [, input, d] = r.children;
+        input.oninput = () => (q.criteria[j] = input.value);
+        d.onclick = () => { q.criteria.splice(j, 1); renderQuestions(); };
+        crit.appendChild(r);
+      });
+      const add = document.createElement("button");
+      add.className = "mini";
+      add.textContent = "+ level";
+      add.onclick = () => { q.criteria.push(""); renderQuestions(); };
+      crit.appendChild(add);
+    } else {
+      crit.innerHTML = '<div class="hint">noul \u2014 binary / unknown judgment, no options needed</div>';
+    }
+    card.appendChild(crit);
+    host.appendChild(card);
+  });
+}
+
+/* ---------- payload ---------- */
+
+function toPayload() {
+  return {
+    body: $("body").value,
+    questions: questions.map((q) => {
+      const item = { id: q.id.trim(), type: q.type, instructions: q.instructions.trim() };
+      if (q.type === "choice") {
+        item.criteria = {};
+        q.criteria.forEach((o) => {
+          if (o.label.trim()) item.criteria[o.label.trim()] = o.desc.trim();
+        });
+      } else if (q.type === "score") {
+        item.criteria = q.criteria.map((s) => s.trim()).filter(Boolean);
+      }
+      return item;
+    }),
+  };
+}
+
+/* ---------- run + render results ---------- */
+
+async function run() {
+  const btn = $("run");
+  const err = $("error");
+  err.style.display = "none";
+  btn.disabled = true;
+  btn.textContent = "Running\u2026";
+  try {
+    const res = await fetch("/api/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(toPayload()),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    renderResults(data);
+  } catch (e) {
+    err.textContent = e.message;
+    err.style.display = "block";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Run predict";
+  }
+}
+
+function confColor(c) {
+  if (c == null) return "var(--muted)";
+  if (c >= 0.75) return "var(--good)";
+  if (c >= 0.4) return "var(--warn)";
+  return "var(--bad)";
+}
+
+function barRow(label, p, winner, color) {
+  const row = document.createElement("div");
+  row.className = "bar-row" + (winner ? " winner" : "");
+  row.innerHTML = `
+    <span class="bar-label" title="${escAttr(label)}">${escHtml(label)}</span>
+    <div class="bar-track"><div class="bar-fill"></div></div>
+    <span class="bar-val">${(p * 100).toFixed(1)}%</span>`;
+  if (color) row.querySelector(".bar-fill").style.background = color;
+  requestAnimationFrame(() => {
+    row.querySelector(".bar-fill").style.width = `${Math.min(100, p * 100)}%`;
+  });
+  return row;
+}
+
+function resCard(qid, ans) {
+  const card = document.createElement("div");
+  card.className = "res";
+
+  const head = document.createElement("div");
+  head.className = "res-head";
+  head.innerHTML = `
+    <span class="name">${escHtml(qid)}</span>
+    <span class="tbadge">${escHtml(ans.type)}</span>
+    <span class="conf" style="color:${confColor(ans.confidence)}">
+      confidence <b>${ans.confidence == null ? "?" : (ans.confidence * 100).toFixed(1) + "%"}</b>
+    </span>`;
+  card.appendChild(head);
+
+  if (ans.type === "choice") {
+    const verdict = document.createElement("div");
+    verdict.className = "verdict";
+    verdict.innerHTML = `${escHtml(ans.choice ?? "?")}<small>chosen option</small>`;
+    card.appendChild(verdict);
+    const probs = ans.probabilities || {};
+    const maxK = Object.keys(probs).reduce((a, b) => (probs[a] >= probs[b] ? a : b), "?");
+    for (const [opt, p] of Object.entries(probs)) {
+      card.appendChild(barRow(opt, p, opt === maxK));
+    }
+  } else if (ans.type === "noul") {
+    const yes = ans.yes ?? 0;
+    const verdict = document.createElement("div");
+    verdict.className = "verdict";
+    verdict.innerHTML = `${yes >= 0.5 ? "Yes" : "No"}<small>P(yes) = ${(yes * 100).toFixed(1)}%</small>`;
+    card.appendChild(verdict);
+    card.appendChild(barRow("yes", yes, false, yes >= 0.5 ? "var(--accent-2)" : "var(--accent)"));
+    card.appendChild(barRow("no", 1 - yes, false));
+  } else if (ans.type === "score") {
+    const legend = ans.legend || {};
+    const n = Object.keys(legend).length || 1;
+    const verdict = document.createElement("div");
+    verdict.className = "verdict";
+    verdict.innerHTML = `${(+ans.score).toFixed(2)}<small>of 0\u2013${n - 1} \u00b7 closest: ${escHtml(legend[Math.round(ans.score)] ?? "?")}</small>`;
+    card.appendChild(verdict);
+    const probs = ans.probabilities || {};
+    const maxK = Object.keys(probs).reduce((a, b) => (probs[a] >= probs[b] ? a : b), "?");
+    for (const [lvl, p] of Object.entries(probs)) {
+      card.appendChild(barRow(`${lvl} \u00b7 ${legend[lvl] ?? ""}`, p, lvl === maxK));
+    }
+  }
+
+  if (ans.confidence != null && ans.confidence < 0.4) {
+    const esc = document.createElement("div");
+    esc.className = "esc";
+    esc.textContent = "\u26a0 low confidence \u2014 model ships uncalibrated; treat as uncertain / escalate";
+    card.appendChild(esc);
+  }
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  meta.textContent = `act_probability: ${ans.act_probability ?? "?"}`;
+  card.appendChild(meta);
+  return card;
+}
+
+function renderResults(data) {
+  const host = $("results");
+  host.innerHTML = "";
+  for (const [qid, ans] of Object.entries(data.answers || {})) {
+    host.appendChild(resCard(qid, ans));
+  }
+  $("usage").textContent =
+    `input tokens: ${data.usage?.input_tokens ?? "?"} \u00b7 output: ${data.usage?.output_tokens ?? 0}`;
+  $("langline").innerHTML = `detected language: <b>${escHtml(data.detected_language ?? "?")}</b>`;
+}
+
+/* ---------- file upload (state + questions JSON) ---------- */
+
+function stateToBody(d) {
+  if (Array.isArray(d.transcript)) {
+    return d.transcript.map((t) => `${t.role || "?"}: ${t.message || ""}`).join("\n");
+  }
+  if (typeof d.body === "string") return d.body;
+  throw new Error("state JSON harus punya 'transcript' (array) atau 'body' (string)");
+}
+
+function loadQuestionsDict(d) {
+  if (!d || typeof d !== "object" || Array.isArray(d)) {
+    throw new Error("question JSON harus object: {qid: {type, instructions, criteria}}");
+  }
+  questions = [];
+  for (const [qid, q] of Object.entries(d)) {
+    if (!q || typeof q !== "object") throw new Error(`question '${qid}': harus object`);
+    let crit = q.criteria;
+    if (crit && !Array.isArray(crit)) {
+      crit = Object.fromEntries(Object.entries(crit).map(([k, v]) => [k, v ?? ""]));
+    }
+    addQuestion({ id: qid, type: q.type, instructions: q.instructions, criteria: crit });
+  }
+}
+
+function readJSONFile(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      try { resolve(JSON.parse(r.result)); }
+      catch (e) { reject(new Error(`JSON tidak valid: ${e.message}`)); }
+    };
+    r.onerror = () => reject(new Error("gagal membaca file"));
+    r.readAsText(file);
+  });
+}
+
+function initUploads() {
+  $("statebtn").onclick = () => $("statefile").click();
+  $("statefile").onchange = async () => {
+    const file = $("statefile").files[0];
+    if (!file) return;
+    try {
+      $("body").value = stateToBody(await readJSONFile(file));
+      $("statename").textContent = `\u2713 ${file.name}`;
+      $("langline").textContent = "";
+    } catch (e) {
+      $("statename").textContent = "";
+      showError(`state: ${e.message}`);
+    }
+  };
+  $("qbtn").onclick = () => $("qfile").click();
+  $("qfile").onchange = async () => {
+    const file = $("qfile").files[0];
+    if (!file) return;
+    try {
+      loadQuestionsDict(await readJSONFile(file));
+      $("qname").textContent = `\u2713 ${file.name}`;
+    } catch (e) {
+      $("qname").textContent = "";
+      showError(`questions: ${e.message}`);
+    }
+  };
+}
+
+/* ---------- init ---------- */
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function escAttr(s) { return escHtml(s); }
+
+function initExamples() {
+  const host = $("examples");
+  EXAMPLES.forEach((ex) => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = ex.label;
+    b.onclick = () => {
+      $("body").value = ex.text;
+      document.querySelectorAll("#examples .chip").forEach((c) => c.classList.remove("active"));
+      b.classList.add("active");
+    };
+    host.appendChild(b);
+  });
+}
+
+function initSamples() {
+  const host = $("samples");
+  fetch("/api/samples")
+    .then((r) => r.json())
+    .then((data) => {
+      for (const s of Object.values(data)) {
+        const b = document.createElement("button");
+        b.className = "chip";
+        b.textContent = s.label;
+        b.onclick = () => {
+          $("body").value = s.body;
+          questions = [];
+          for (const [qid, q] of Object.entries(s.questions || {})) {
+            addQuestion({ id: qid, type: q.type, instructions: q.instructions, criteria: q.criteria });
+          }
+          document.querySelectorAll("#samples .chip").forEach((c) => c.classList.remove("active"));
+          b.classList.add("active");
+        };
+        host.appendChild(b);
+      }
+    })
+    .catch(() => {});
+}
+
+function initPresets() {
+  const host = $("presets");
+  ["triage", "email", "router", "moderation"].forEach((name) => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = `preset: ${name}`;
+    b.onclick = async () => {
+      try {
+        const res = await fetch("/api/presets");
+        const data = await res.json();
+        questions = [];
+        for (const [qid, q] of Object.entries(data[name] || {})) {
+          addQuestion({ id: qid, type: q.type, instructions: q.instructions, criteria: q.criteria });
+        }
+      } catch (e) {
+        showError(`preset load failed: ${e.message}`);
+      }
+    };
+    host.appendChild(b);
+  });
+}
+
+function showError(msg) {
+  const err = $("error");
+  err.textContent = msg;
+  err.style.display = "block";
+}
+
+$("addq").onclick = () => addQuestion({});
+$("run").onclick = run;
+
+initExamples();
+initSamples();
+initPresets();
+initUploads();
+// start with triage preset shape, prefilled
+addQuestion({ id: "department", type: "choice", instructions: "Which team should handle `body`?", criteria: {
+  billing: "invoices, payments, refunds, duplicate charges",
+  technical: "bugs, errors, crashes, login problems",
+  sales: "pricing, demos, upgrades, new accounts",
+}});
+addQuestion({ id: "refund_requested", type: "noul", instructions: "Does the sender ask for money back?" });
+addQuestion({ id: "frustration", type: "score", instructions: "How frustrated does the sender sound in `body`?", criteria: [
+  "calm and neutral", "concerned but civil", "clearly annoyed", "very angry",
+]});
+$("body").value = EXAMPLES[0].text;
+</script>
+</body>
+</html>

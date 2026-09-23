@@ -1,0 +1,263 @@
+{
+  "title": "Simulasi Chat — Gangguan Internet",
+  "transcript": [
+    {
+      "role": "Customer",
+      "message": "Halo, internet saya dari tadi pagi nggak bisa dipakai. Lampu LOS di modem saya merah."
+    },
+    {
+      "role": "Agent",
+      "message": "Halo Kak, mohon maaf atas gangguan internetnya. Saya bantu cek ya. Boleh diinformasikan nomor pelanggan atau nomor layanan yang terdaftar?"
+    },
+    {
+      "role": "Customer",
+      "message": "Nomornya 1234567890."
+    },
+    {
+      "role": "Agent",
+      "message": "Baik Kak, saya cek terlebih dahulu ya. Mohon tunggu sebentar."
+    },
+    {
+      "role": "Agent",
+      "message": "Terima kasih sudah menunggu, Kak. Saya sudah cek layanan 1234567890. Saat ini memang terdeteksi adanya gangguan pada koneksi di lokasi Kakak.\n\nUntuk memastikan, apakah lampu LOS pada modem masih menyala merah?"
+    },
+    {
+      "role": "Customer",
+      "message": "Iya, masih merah."
+    },
+    {
+      "role": "Agent",
+      "message": "Baik Kak. Mohon coba matikan modem/ONT, tunggu sekitar 30 detik, kemudian nyalakan kembali. Setelah 3–5 menit, boleh diinformasikan apakah lampu LOS masih merah?"
+    },
+    {
+      "role": "Customer",
+      "message": "Sudah saya coba. Masih merah dan internet tetap nggak bisa."
+    },
+    {
+      "role": "Agent",
+      "message": "Baik Kak, berarti gangguan belum teratasi melalui restart modem. Saya bantu buatkan laporan gangguan agar dapat ditindaklanjuti oleh tim teknis.\n\nLaporan dengan nomor tiket INC-20260923-00125 sudah berhasil dibuat."
+    },
+    {
+      "role": "Customer",
+      "message": "Kapan kira-kira internetnya bisa normal lagi?"
+    },
+    {
+      "role": "Agent",
+      "message": "Untuk saat ini tim teknis perlu melakukan pengecekan lebih lanjut pada jaringan di lokasi. Estimasi penanganan maksimal 1×24 jam. Mohon modem tetap dalam kondisi menyala selama proses pengecekan ya, Kak."
+    },
+    {
+      "role": "Customer",
+      "message": "Oke, saya harap cepat ya. Ini internet dipakai buat kerja."
+    },
+    {
+      "role": "Agent",
+      "message": "Tentu Kak, kami memahami internet sangat penting untuk aktivitas kerja. Laporan Kakak sudah kami buat dan akan ditindaklanjuti oleh tim terkait. Mohon maaf atas ketidaknyamanannya."
+    }
+  ],
+  "kategori_level": [
+    {
+      "level_1": "Informasi",
+      "level_2": "Internet",
+      "level_3": "Paket Internet",
+      "level_4": "Informasi Harga Paket"
+    },
+    {
+      "level_1": "Informasi",
+      "level_2": "Internet",
+      "level_3": "Paket Internet",
+      "level_4": "Informasi Benefit Paket"
+    },
+    {
+      "level_1": "Informasi",
+      "level_2": "Internet",
+      "level_3": "Kecepatan Internet",
+      "level_4": "Informasi Speed Paket"
+    },
+    {
+      "level_1": "Informasi",
+      "level_2": "Internet",
+      "level_3": "Gangguan Internet",
+      "level_4": "Cek Status Gangguan"
+    },
+    {
+      "level_1": "Informasi",
+      "level_2": "Billing",
+      "level_3": "Tagihan",
+      "level_4": "Informasi Tagihan"
+    },
+    {
+      "level_1": "Informasi",
+      "level_2": "Billing",
+      "level_3": "Pembayaran",
+      "level_4": "Metode Pembayaran"
+    },
+    {
+      "level_1": "Informasi",
+      "level_2": "Akun",
+      "level_3": "Data Pelanggan",
+      "level_4": "Informasi Data Akun"
+    },
+    {
+      "level_1": "Informasi",
+      "level_2": "Instalasi",
+      "level_3": "Instalasi Baru",
+      "level_4": "Informasi Proses Instalasi"
+    },
+    {
+      "level_1": "Informasi",
+      "level_2": "Teknisi",
+      "level_3": "Kunjungan Teknisi",
+      "level_4": "Informasi Jadwal Teknisi"
+    },
+    {
+      "level_1": "Permintaan",
+      "level_2": "Internet",
+      "level_3": "Paket Internet",
+      "level_4": "Upgrade Paket"
+    },
+    {
+      "level_1": "Permintaan",
+      "level_2": "Internet",
+      "level_3": "Paket Internet",
+      "level_4": "Downgrade Paket"
+    },
+    {
+      "level_1": "Permintaan",
+      "level_2": "Internet",
+      "level_3": "Wi-Fi",
+      "level_4": "Ganti Password Wi-Fi"
+    },
+    {
+      "level_1": "Permintaan",
+      "level_2": "Internet",
+      "level_3": "Wi-Fi",
+      "level_4": "Ganti Nama Wi-Fi"
+    },
+    {
+      "level_1": "Permintaan",
+      "level_2": "Internet",
+      "level_3": "Gangguan Internet",
+      "level_4": "Request Teknisi"
+    },
+    {
+      "level_1": "Permintaan",
+      "level_2": "Billing",
+      "level_3": "Pembayaran",
+      "level_4": "Request Refund"
+    },
+    {
+      "level_1": "Permintaan",
+      "level_2": "Akun",
+      "level_3": "Data Pelanggan",
+      "level_4": "Perubahan Data Pelanggan"
+    },
+    {
+      "level_1": "Permintaan",
+      "level_2": "Instalasi",
+      "level_3": "Instalasi Baru",
+      "level_4": "Pengajuan Instalasi"
+    },
+    {
+      "level_1": "Permintaan",
+      "level_2": "Instalasi",
+      "level_3": "Relokasi",
+      "level_4": "Pengajuan Relokasi"
+    },
+    {
+      "level_1": "Permintaan",
+      "level_2": "Teknisi",
+      "level_3": "Kunjungan Teknisi",
+      "level_4": "Reschedule Kunjungan"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Internet",
+      "level_3": "Gangguan Internet",
+      "level_4": "Internet Tidak Bisa Digunakan"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Internet",
+      "level_3": "Gangguan Internet",
+      "level_4": "Internet Putus-Putus"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Internet",
+      "level_3": "Gangguan Internet",
+      "level_4": "Koneksi Lambat"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Internet",
+      "level_3": "Gangguan Internet",
+      "level_4": "LOS Merah"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Internet",
+      "level_3": "Gangguan Internet",
+      "level_4": "Tidak Ada Sinyal"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Internet",
+      "level_3": "Wi-Fi",
+      "level_4": "Wi-Fi Tidak Terhubung"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Internet",
+      "level_3": "Wi-Fi",
+      "level_4": "Wi-Fi Sering Terputus"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Internet",
+      "level_3": "Modem / ONT",
+      "level_4": "Modem Mati"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Internet",
+      "level_3": "Modem / ONT",
+      "level_4": "Lampu LOS Merah"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Billing",
+      "level_3": "Tagihan",
+      "level_4": "Tagihan Tidak Sesuai"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Billing",
+      "level_3": "Pembayaran",
+      "level_4": "Pembayaran Gagal"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Billing",
+      "level_3": "Pembayaran",
+      "level_4": "Pembayaran Belum Terupdate"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Instalasi",
+      "level_3": "Instalasi Baru",
+      "level_4": "Instalasi Terlambat"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Teknisi",
+      "level_3": "Kunjungan Teknisi",
+      "level_4": "Teknisi Belum Datang"
+    },
+    {
+      "level_1": "Komplain",
+      "level_2": "Teknisi",
+      "level_3": "Kunjungan Teknisi",
+      "level_4": "Penanganan Teknisi Tidak Selesai"
+    }
+  ]
+}
