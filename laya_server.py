@@ -1,21 +1,27 @@
-r"""Web playground for convaiinnovations/laya-multilingual.
+r"""laya-multilingual server (port 5001) — playground + compare hub.
 
-Flask serves a single page; /api/predict runs agent.predict().
-Run:  .venv\Scripts\python.exe app.py  ->  http://127.0.0.1:5001
+Loads convaiinnovations/laya-multilingual once. Serves the playground UI,
+the /compare UI, and fans /api/compare out to this model and the Julia-1
+server (julia_server.py, port 5002).
+Run:  .venv\Scripts\python.exe laya_server.py  ->  http://127.0.0.1:5001
 """
 import json
 import os
+import threading
+import time
+import urllib.error
+import urllib.request
 
 os.environ.setdefault("USE_TF", "0")
-
-import threading
 
 import laya
 from flask import Flask, jsonify, render_template, request
 
 import hier_converter
+from hier_flow import norm_hier_config, run_hierarchical
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+JULIA_URL = "http://127.0.0.1:5002"
 
 app = Flask(__name__)
 agent = laya.load("convaiinnovations/laya-multilingual")
@@ -49,48 +55,29 @@ def _load_question_file(path):
     return questions
 
 
-# Hierarchical mode config: data/contoh_pertanyaan_hierarki.json.
-# Levels without "depends_on" are asked in one predict; a level with
-# "depends_on" is asked in a follow-up predict using the branch criteria
-# selected by the parent answer ({level_3} placeholder in instructions).
-# The same shape can be supplied per-request via /api/predict_hierarchical.
+# Hierarchical mode config: data/contoh_pertanyaan_hierarki_cabang.json.
+# Flow logic lives in hier_flow.py (shared with julia_server.py); config
+# normalizer too. The same shape can be supplied per-request via
+# /api/predict_hierarchical.
 HIER_PATH = os.path.join(DATA_DIR, "contoh_pertanyaan_hierarki_cabang.json")
-
-
-def _norm_criteria(crit):
-    return {k: v or "" for k, v in crit.items()}
-
-
-def _norm_hier_config(raw):
-    """Hierarchical JSON -> normalized levels dict (nulls -> '')."""
-    if not isinstance(raw, dict) or not isinstance(raw.get("levels"), dict) or not raw["levels"]:
-        raise ValueError(
-            "config hierarki tidak valid: butuh object dengan 'levels': {qid: {type, instructions, criteria}}"
-        )
-    levels = {}
-    for qid, q in raw["levels"].items():
-        q = dict(q)
-        if not str(q.get("instructions", "")).strip():
-            raise ValueError(f"level '{qid}': instructions wajib")
-        if isinstance(q.get("criteria"), dict):
-            q["criteria"] = _norm_criteria(q["criteria"])
-        elif "branches" not in q:
-            raise ValueError(f"level '{qid}': butuh 'criteria' atau 'branches'")
-        if isinstance(q.get("branches"), dict):
-            q["branches"] = {br: _norm_criteria(c) for br, c in q["branches"].items()}
-        levels[qid] = q
-    return levels
 
 
 def _load_hier_config():
     try:
         with open(HIER_PATH, encoding="utf-8") as f:
-            return _norm_hier_config(json.load(f))
+            return norm_hier_config(json.load(f))
     except FileNotFoundError:
         return {}
 
 
 HIER_CONFIG = _load_hier_config()
+
+
+def _laya_predict_fn(body, questions):
+    """predict_fn contract for hier_flow."""
+    with predict_lock:
+        result = agent.predict({"body": body}, questions)
+    return _normalize_answers(result)
 
 
 # --- converter: raw comma paths from DB -> hierarchical config -------------
@@ -300,7 +287,7 @@ def predict_hierarchical():
         return jsonify({"error": "'body' harus diisi"}), 400
     try:
         cfg = (
-            _norm_hier_config(payload["questions"])
+            norm_hier_config(payload["questions"])
             if isinstance(payload.get("questions"), dict)
             else HIER_CONFIG
         )
@@ -309,62 +296,16 @@ def predict_hierarchical():
     if not cfg:
         return jsonify({"error": "config hierarki tidak tersedia (data/ hilang)"}), 500
 
-    answers = {}
-    input_tokens = 0
-
-    stage1 = {qid: q for qid, q in cfg.items() if "depends_on" not in q}
-    if not stage1:
-        return jsonify({"error": "minimal satu level tanpa 'depends_on' diperlukan"}), 400
     try:
-        with predict_lock:
-            r1 = agent.predict(
-                {"body": body},
-                {
-                    qid: {"type": q.get("type", "choice"),
-                          "instructions": q["instructions"],
-                          "criteria": q.get("criteria", {})}
-                    for qid, q in stage1.items()
-                },
-            )
+        answers, final_path = run_hierarchical(_laya_predict_fn, body, cfg)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": f"predict tahap 1 gagal: {e}"}), 500
-    answers.update(_normalize_answers(r1))
-    input_tokens += r1.get("usage", {}).get("input_tokens", 0)
-
-    for qid, q in cfg.items():
-        dep = q.get("depends_on")
-        if not dep:
-            continue
-        parent = answers.get(dep, {}).get("choice")
-        crit = q.get("branches", {}).get(parent) if parent else None
-        if not crit:
-            continue  # branch tanpa kriteria: level dilewati
-        instr = q["instructions"]
-        for k, a in answers.items():
-            if a.get("choice"):
-                instr = instr.replace("{" + k + "}", a["choice"])
-        context = body + "\n\nKonteks klasifikasi sebelumnya: " + " > ".join(
-            a["choice"] for a in answers.values() if a.get("choice")
-        )
-        try:
-            with predict_lock:
-                r2 = agent.predict(
-                    {"body": context},
-                    {qid: {"type": q.get("type", "choice"),
-                           "instructions": instr,
-                           "criteria": crit}},
-                )
-        except Exception as e:
-            return jsonify({"error": f"predict tahap 2 ({qid}) gagal: {e}"}), 500
-        answers[qid] = _normalize_answers(r2)[qid]
-        input_tokens += r2.get("usage", {}).get("input_tokens", 0)
-
-    path_parts = [a.get("choice") for a in answers.values() if a.get("choice")]
+        return jsonify({"error": f"predict hierarki gagal: {e}"}), 500
     return jsonify(
         {
             "answers": answers,
-            "final_path": " > ".join(path_parts),
-            "usage": {"input_tokens": input_tokens, "output_tokens": 0},
+            "final_path": final_path,
             "detected_language": safe_detect_language(body),
         }
     )
@@ -378,6 +319,95 @@ def safe_detect_language(text):
         return str(r or "?")
     except Exception:
         return "?"
+
+
+# --- compare: laya (local) vs Julia-1 (proxy to julia_server:5002) ---------
+
+@app.get("/compare")
+def compare_page():
+    return render_template("compare.html")
+
+
+def _julia_call(path, payload, timeout=300):
+    req = urllib.request.Request(
+        JULIA_URL + path,
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.load(r)
+
+
+@app.post("/api/compare")
+def api_compare():
+    payload = request.get_json(force=True, silent=True) or {}
+    body = str(payload.get("body", "")).strip()
+    if not body:
+        return jsonify({"error": "'body' harus diisi"}), 400
+    hier = bool(payload.get("hierarchical"))
+    questions = payload.get("questions")
+
+    cfg = None
+    if hier:
+        try:
+            cfg = norm_hier_config(questions) if isinstance(questions, dict) else HIER_CONFIG
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        if not cfg:
+            return jsonify({"error": "config hierarki tidak tersedia"}), 400
+
+    results = {}
+
+    def run_laya():
+        t0 = time.perf_counter()
+        try:
+            if hier:
+                answers, final_path = run_hierarchical(_laya_predict_fn, body, cfg)
+                results["laya"] = {
+                    "answers": answers,
+                    "final_path": final_path,
+                    "latency_ms": round((time.perf_counter() - t0) * 1000),
+                }
+            else:
+                b, qs = build_questions({"body": body, "questions": questions})
+                with predict_lock:
+                    raw = agent.predict({"body": b}, qs)
+                results["laya"] = {
+                    "answers": _normalize_answers(raw),
+                    "usage": raw.get("usage", {}),
+                    "latency_ms": round((time.perf_counter() - t0) * 1000),
+                }
+        except ValueError as e:
+            results["laya"] = {"error": str(e)}
+        except Exception as e:
+            results["laya"] = {"error": f"laya gagal: {e}"}
+
+    def run_julia():
+        try:
+            if hier:
+                jp = {"body": body}
+                if isinstance(questions, dict):
+                    jp["questions"] = questions
+                results["julia"] = _julia_call("/predict_hierarchical", jp)
+            else:
+                results["julia"] = _julia_call(
+                    "/predict", {"body": body, "questions": questions}
+                )
+        except urllib.error.HTTPError as e:
+            try:
+                detail = json.loads(e.read().decode()).get("error", "")
+            except Exception:
+                detail = ""
+            results["julia"] = {"error": detail or f"julia HTTP {e.code}"}
+        except Exception as e:
+            results["julia"] = {"error": f"julia server tidak terjangkau: {e}"}
+
+    threads = [threading.Thread(target=run_laya), threading.Thread(target=run_julia)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    return jsonify({"laya": results.get("laya"), "julia": results.get("julia")})
 
 
 if __name__ == "__main__":

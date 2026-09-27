@@ -1,7 +1,10 @@
 .venv/
+.venv-julia/
+julia_model/
 __pycache__/
 *.pyc
-server.log
+laya_server.log
+julia_server.log
 .playwright-mcp/
 .zcode/
 *.png

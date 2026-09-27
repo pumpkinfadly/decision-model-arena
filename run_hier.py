@@ -27,4 +27,4 @@ for lv in ("level_1", "level_2", "level_3", "level_4"):
         continue
     top = sorted(a["probabilities"].items(), key=lambda kv: -kv[1])[:3]
     print(f"{lv}: {a['choice']}  conf={a['confidence']:.3f}  top3={[(k, round(p, 3)) for k, p in top]}")
-print("usage:", r["usage"])
+print("usage:", r.get("usage", "-"))

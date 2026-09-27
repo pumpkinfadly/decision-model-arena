@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>laya vs Julia-1 — compare</title>
+<style>
+  :root {
+    --bg: #0f1117; --panel: #171a23; --panel-2: #1d2130; --border: #2a2f42;
+    --text: #e7eaf3; --muted: #8b93a8; --accent: #7c6cf0; --accent-2: #2dd4bf;
+    --good: #34d399; --warn: #fbbf24; --bad: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  header { padding: 18px 24px 10px; }
+  header h1 { margin: 0; font-size: 20px; }
+  header h1 .laya { color: var(--accent); }
+  header h1 .julia { color: var(--accent-2); }
+  .badges { margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { font-size: 11px; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 999px; padding: 2px 10px; }
+  main { padding: 8px 24px 40px; max-width: 1280px; margin: 0 auto; }
+  a.back { color: var(--muted); font-size: 12px; text-decoration: none; }
+  a.back:hover { color: var(--text); }
+
+  .card { background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted); font-weight: 600; }
+  textarea { width: 100%; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    font: inherit; min-height: 140px; resize: vertical; }
+  textarea:focus { outline: 1px solid var(--accent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: transparent; color: var(--muted); cursor: pointer;
+    border: 1px solid var(--border); border-radius: 999px; padding: 3px 12px; font-size: 12px; }
+  .chip:hover { color: var(--text); border-color: var(--accent); }
+  .chip.active { color: var(--text); border-color: var(--accent); background: rgba(124,108,240,.12); }
+  .hint { font-size: 12px; color: var(--muted); margin: 6px 0; }
+  .upl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .upl-btn { border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px;
+    font-weight: 600; cursor: pointer; color: #fff; transition: filter .15s; }
+  .upl-btn:hover { filter: brightness(1.18); }
+  .upl-btn.state { background: linear-gradient(135deg, #7c6cf0, #5b8def); }
+  .upl-btn.qs { background: linear-gradient(135deg, #0ea5a0, #2dd4bf); color: #062726; }
+  .upl-ok { color: var(--good); font-size: 12px; }
+
+  .runbar { display: flex; align-items: center; gap: 14px; margin: 4px 0 18px; }
+  .run { background: var(--accent); color: #fff; border: none; cursor: pointer;
+    border-radius: 10px; padding: 10px 26px; font-size: 15px; font-weight: 600; }
+  .run:disabled { opacity: .5; cursor: wait; }
+  .error { display: none; background: rgba(248,113,113,.1); color: var(--bad);
+    border: 1px solid var(--bad); border-radius: 10px; padding: 8px 14px;
+    margin-bottom: 14px; font-size: 13px; }
+
+  .summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .sum { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 14px; font-size: 13px; }
+  .sum b { font-size: 15px; }
+  .sum.match b { color: var(--good); }
+  .sum.mismatch b { color: var(--warn); }
+  .sum .laya-c { color: var(--accent); } .sum .julia-c { color: var(--accent-2); }
+
+  .paths { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 980px) { .paths { grid-template-columns: 1fr; } }
+  .fpath { border-radius: 12px; padding: 10px 14px; font-size: 13px; }
+  .fpath .who { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: .8; margin-bottom: 4px; }
+  .fpath b { font-size: 14px; }
+  .fpath.laya { background: rgba(124,108,240,.08); border: 1px solid var(--accent); color: var(--accent); }
+  .fpath.julia { background: rgba(45,212,191,.08); border: 1px solid var(--accent-2); color: var(--accent-2); }
+
+  .qrow { margin-bottom: 16px; }
+  .qhead { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .qhead .name { font-weight: 600; font-size: 15px; }
+  .tbadge { font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 1px 8px; }
+  .match { font-size: 11px; border-radius: 999px; padding: 2px 10px; font-weight: 700; }
+  .match.ok { background: rgba(52,211,153,.12); color: var(--good); border: 1px solid var(--good); }
+  .match.no { background: rgba(251,191,36,.12); color: var(--warn); border: 1px solid var(--warn); }
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 980px) { .duo { grid-template-columns: 1fr; } }
+  .mcard { background: var(--panel); border-radius: 12px; padding: 12px 14px; }
+  .mcard.laya { border: 1px solid var(--accent); }
+  .mcard.julia { border: 1px solid var(--accent-2); }
+  .mhead { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .mhead .who { font-weight: 700; font-size: 13px; }
+  .mcard.laya .who { color: var(--accent); } .mcard.julia .who { color: var(--accent-2); }
+  .lat { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .lat b { color: var(--text); }
+  .verdict { font-size: 17px; font-weight: 700; margin-bottom: 2px; word-break: break-word; }
+  .verdict small { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 6px; }
+  .conf { font-size: 12px; margin-bottom: 8px; }
+  .conf b { font-size: 13px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .bar-label { flex: 0 0 42%; font-size: 12px; color: var(--muted); overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+  .bar-track { flex: 1; background: var(--panel-2); border-radius: 999px; height: 12px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; width: 0; transition: width .4s ease; }
+  .bar-row.r1 .bar-fill { background: var(--accent-2); }
+  .mcard.laya .bar-row.r1 .bar-fill { background: var(--accent); }
+  .bar-row.r2 .bar-fill { background: var(--warn); }
+  .bar-row.r3 .bar-fill { background: #60a5fa; }
+  .bar-row.dim { opacity: .45; }
+  .bar-val { flex: 0 0 44px; font-size: 11px; color: var(--muted); }
+  .mode-tag { font-size: 10px; color: var(--warn); border: 1px solid var(--warn);
+    border-radius: 999px; padding: 1px 8px; margin-left: 8px; }
+  .merr { color: var(--bad); font-size: 13px; }
+  .empty { color: var(--muted); font-size: 13px; padding: 20px 0; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="/">&larr; playground utama</a>
+  <h1><span class="laya">laya-multilingual</span> vs <span class="julia">Julia-1</span></h1>
+  <div class="badges">
+    <span class="badge">laya: 322M · mmBERT-base</span>
+    <span class="badge">Julia-1: 144M · mmBERT-small</span>
+    <span class="badge">state + pertanyaan sama · dijalankan paralel</span>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Input</h2>
+    <div class="hint">contoh (klik untuk memuat state + pertanyaan):</div>
+    <div class="chips" id="examples"></div>
+    <textarea id="body" placeholder="Paste transcript / teks pelanggan..." style="margin-top:10px"></textarea>
+    <div class="upl">
+      <input type="file" id="statefile" accept=".json,application/json" hidden>
+      <button class="upl-btn state" id="statebtn">&#128193; Upload State (JSON)</button>
+      <span class="upl-ok" id="statename"></span>
+      <input type="file" id="qfile" accept=".json,application/json" hidden>
+      <button class="upl-btn qs" id="qbtn">&#128193; Upload Questions (JSON)</button>
+      <span class="upl-ok" id="qname"></span>
+    </div>
+    <div class="hint" id="modelnote"></div>
+  </div>
+
+  <div class="error" id="error"></div>
+
+  <div class="runbar">
+    <button class="run" id="run">Run compare</button>
+    <span class="hint">kedua model menerima input identik; flat &gt;20 opsi &rarr; Julia pakai Router (winner + confidence saja)</span>
+  </div>
+
+  <div class="summary" id="summary" style="display:none"></div>
+  <div class="paths" id="paths"></div>
+  <div id="results"><div class="empty">hasil perbandingan muncul di sini</div></div>
+</main>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+let hierMode = false;
+let hierConfig = null;      // raw hierarchical JSON (uploaded / dari sample)
+let flatQuestions = null;   // {qid: {type, instructions, criteria}} (flat)
+let samplesLoaded = false;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function showError(msg) { const e = $("error"); e.textContent = msg; e.style.display = "block"; }
+
+function setMode(hier, config) {
+  hierMode = hier;
+  hierConfig = hier ? config : null;
+  if (!hier) flatQuestions = null;
+  $("modelnote").textContent = hier
+    ? "Mode bertingkat aktif \u2014 kedua model menjalankan alur level 1\u20134 yang sama."
+    : "";
+}
+
+function initSamples() {
+  fetch("/api/samples").then((r) => r.json()).then((data) => {
+    let first = true;
+    for (const s of Object.values(data)) {
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.textContent = s.label;
+      b.onclick = () => {
+        $("body").value = s.body;
+        if (s.hierarchical) { setMode(true, s.questions && s.questions.levels ? s.questions : null); flatQuestions = null; }
+        else { setMode(false); flatQuestions = s.questions; }
+        document.querySelectorAll("#examples .chip").forEach((c) => c.classList.remove("active"));
+        b.classList.add("active");
+      };
+      $("examples").appendChild(b);
+      if (first && !samplesLoaded) {
+        first = false; samplesLoaded = true; b.onclick();
+      }
+    }
+  }).catch(() => {});
+}
+
+function stateToBody(d) {
+  if (Array.isArray(d.transcript)) return d.transcript.map((t) => `${t.role || "?"}: ${t.message || ""}`).join("\n");
+  if (typeof d.body === "string") return d.body;
+  throw new Error("state JSON harus punya 'transcript' (array) atau 'body' (string)");
+}
+function readJSONFile(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => { try { resolve(JSON.parse(r.result)); } catch (e) { reject(new Error(`JSON tidak valid: ${e.message}`)); } };
+    r.onerror = () => reject(new Error("gagal membaca file"));
+    r.readAsText(file);
+  });
+}
+function initUploads() {
+  $("statebtn").onclick = () => $("statefile").click();
+  $("statefile").onchange = async () => {
+    const f = $("statefile").files[0]; if (!f) return;
+    try { $("body").value = stateToBody(await readJSONFile(f)); $("statename").textContent = `\u2713 ${f.name}`; }
+    catch (e) { $("statename").textContent = ""; showError(`state: ${e.message}`); }
+  };
+  $("qbtn").onclick = () => $("qfile").click();
+  $("qfile").onchange = async () => {
+    const f = $("qfile").files[0]; if (!f) return;
+    try {
+      let d = await readJSONFile(f);
+      if (Array.isArray(d) || (d && typeof d === "object" && Array.isArray(d.paths))) {
+        const res = await fetch("/api/convert_hierarchical", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) });
+        const cfg = await res.json();
+        if (!res.ok) throw new Error(cfg.error || `HTTP ${res.status}`);
+        d = cfg;
+      }
+      if (d && d.levels) { setMode(true, d); }
+      else if (d && typeof d === "object") { setMode(false); flatQuestions = d; }
+      else throw new Error("format questions tidak dikenal");
+      $("qname").textContent = `\u2713 ${f.name}${hierMode ? " \u2192 hierarki" : ""}`;
+    } catch (e) { $("qname").textContent = ""; showError(`questions: ${e.message}`); }
+  };
+}
+
+async function run() {
+  const btn = $("run");
+  $("error").style.display = "none";
+  btn.disabled = true; btn.textContent = "Comparing\u2026";
+  try {
+    const payload = { body: $("body").value };
+    if (hierMode) {
+      payload.hierarchical = true;
+      if (hierConfig) payload.questions = hierConfig;
+    } else {
+      if (!flatQuestions) throw new Error("muat contoh atau upload questions dulu");
+      payload.questions = Object.entries(flatQuestions).map(([id, q]) => ({ id, ...q }));
+    }
+    const res = await fetch("/api/compare", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    render(data);
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "Run compare";
+  }
+}
+
+function confColor(c) {
+  if (c == null) return "var(--muted)";
+  if (c >= 0.75) return "var(--good)";
+  if (c >= 0.4) return "var(--warn)";
+  return "var(--bad)";
+}
+
+function modelCard(side, ans, latency) {
+  const card = document.createElement("div");
+  card.className = `mcard ${side}`;
+  if (!ans) { card.innerHTML = `<div class="mhead"><span class="who">${side}</span></div><div class="merr">tidak ada jawaban</div>`; return card; }
+  if (ans.error) { card.innerHTML = `<div class="mhead"><span class="who">${side}</span></div><div class="merr">${esc(ans.error)}</div>`; return card; }
+  const head = document.createElement("div");
+  head.className = "mhead";
+  const modeTag = ans.mode ? `<span class="mode-tag" title="opsi >20: probabilitas bersifat kondisional atas kandidat final">${esc(ans.mode)}</span>` : "";
+  head.innerHTML = `<span class="who">${side}</span>${modeTag}<span class="lat">latency <b>${latency ?? "?"} ms</b></span>`;
+  card.appendChild(head);
+
+  let verdict = "?", verdictSmall = "", bars = [];
+  if (ans.type === "choice" || ans.choice !== undefined) {
+    verdict = ans.choice ?? "?";
+    verdictSmall = "chosen option";
+    const entries = Object.entries(ans.probabilities || {}).sort((a, b) => b[1] - a[1]);
+    bars = entries.slice(0, 3).map(([k, p], i) => ({ label: k, p, rank: i + 1 }));
+    if (entries.length > 3) bars.dim = entries.length;
+  } else if (ans.type === "noul" || ans.yes !== undefined) {
+    const yes = ans.yes ?? 0;
+    verdict = yes >= 0.5 ? "Yes" : "No";
+    verdictSmall = `P(yes) = ${(yes * 100).toFixed(1)}%`;
+    bars = [{ label: "yes", p: yes, rank: yes >= 0.5 ? 1 : 2 }, { label: "no", p: 1 - yes, rank: yes >= 0.5 ? 2 : 1 }];
+  } else if (ans.type === "score" || ans.score !== undefined) {
+    const legend = ans.legend || {};
+    const n = Object.keys(legend).length || (ans.probabilities ? Object.keys(ans.probabilities).length : 1);
+    verdict = (+ans.score).toFixed(2);
+    verdictSmall = `of 0\u2013${n - 1}`;
+    const entries = Object.entries(ans.probabilities || {}).sort((a, b) => b[1] - a[1]);
+    bars = entries.slice(0, 3).map(([k, p], i) => ({ label: `${k} \u00b7 ${legend[k] ?? ""}`, p, rank: i + 1 }));
+  }
+  const v = document.createElement("div");
+  v.className = "verdict";
+  v.innerHTML = `${esc(verdict)}<small>${verdictSmall}</small>`;
+  card.appendChild(v);
+  const c = document.createElement("div");
+  c.className = "conf";
+  c.style.color = confColor(ans.confidence);
+  c.innerHTML = `confidence <b>${ans.confidence == null ? "?" : (ans.confidence * 100).toFixed(1) + "%"}</b>`;
+  card.appendChild(c);
+  for (const b of bars) {
+    const row = document.createElement("div");
+    row.className = `bar-row r${b.rank}`;
+    row.innerHTML = `<span class="bar-label" title="${esc(b.label)}">${esc(b.label)}</span>
+      <div class="bar-track"><div class="bar-fill"></div></div>
+      <span class="bar-val">${(b.p * 100).toFixed(1)}%</span>`;
+    requestAnimationFrame(() => { row.querySelector(".bar-fill").style.width = `${Math.min(100, b.p * 100)}%`; });
+    card.appendChild(row);
+  }
+  return card;
+}
+
+function pick(ans) {
+  if (!ans || ans.error) return null;
+  if (ans.type === "choice" || ans.choice !== undefined) return ans.choice;
+  if (ans.type === "noul" || ans.yes !== undefined) return (ans.yes ?? 0) >= 0.5 ? "Yes" : "No";
+  if (ans.type === "score" || ans.score !== undefined) return (+ans.score).toFixed(1);
+  return null;
+}
+
+function render(data) {
+  const host = $("results");
+  host.innerHTML = "";
+  const laya = data.laya || {}, julia = data.julia || {};
+  const la = laya.answers || {}, ja = julia.answers || {};
+
+  // summary
+  const qids = [...new Set([...Object.keys(la), ...Object.keys(ja)])];
+  let match = 0, compared = 0;
+  for (const qid of qids) {
+    const p1 = pick(la[qid]), p2 = pick(ja[qid]);
+    if (p1 != null && p2 != null) { compared++; if (p1 === p2) match++; }
+  }
+  const sum = $("summary");
+  sum.style.display = "flex";
+  sum.innerHTML = `
+    <div class="sum match"><b>${match}</b>/${compared} jawaban sama</div>
+    ${compared - match > 0 ? `<div class="sum mismatch"><b>${compared - match}</b> berbeda</div>` : ""}
+    <div class="sum"><span class="laya-c">laya</span> <b>${laya.latency_ms ?? "?"} ms</b></div>
+    <div class="sum"><span class="julia-c">julia</span> <b>${julia.latency_ms ?? "?"} ms</b></div>`;
+
+  // final paths (hierarchical)
+  const ph = $("paths");
+  ph.innerHTML = "";
+  if (laya.final_path || julia.final_path) {
+    if (laya.final_path) ph.innerHTML += `<div class="fpath laya"><div class="who">laya</div><b>${esc(laya.final_path)}</b></div>`;
+    if (julia.final_path) ph.innerHTML += `<div class="fpath julia"><div class="who">julia</div><b>${esc(julia.final_path)}</b></div>`;
+  }
+
+  for (const qid of qids) {
+    const a1 = la[qid], a2 = ja[qid];
+    const row = document.createElement("div");
+    row.className = "qrow";
+    const p1 = pick(a1), p2 = pick(a2);
+    let badge = "";
+    if (p1 != null && p2 != null) {
+      badge = p1 === p2
+        ? '<span class="match ok">match</span>'
+        : '<span class="match no">beda</span>';
+    }
+    const type = (a1 && a1.type) || (a2 && a2.type) || "?";
+    const head = document.createElement("div");
+    head.className = "qhead";
+    head.innerHTML = `<span class="name">${esc(qid)}</span><span class="tbadge">${esc(type)}</span>${badge}`;
+    row.appendChild(head);
+    const duo = document.createElement("div");
+    duo.className = "duo";
+    duo.appendChild(modelCard("laya", a1, laya.latency_ms));
+    duo.appendChild(modelCard("julia", a2, julia.latency_ms));
+    row.appendChild(duo);
+    host.appendChild(row);
+  }
+  if (!qids.length) host.innerHTML = '<div class="empty">tidak ada jawaban</div>';
+}
+
+$("run").onclick = run;
+initSamples();
+initUploads();
+</script>
+</body>
+</html>
