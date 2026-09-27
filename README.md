@@ -118,8 +118,8 @@ half/quant di laya 0.3.7).
 
 ```bash
 sudo apt update && sudo apt install -y python3-venv git
-git clone https://github.com/pumpkinfadly/laya-multilingual-playground.git
-cd laya-multilingual-playground
+git clone https://github.com/pumpkinfadly/decision-model-arena.git
+cd decision-model-arena
 
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt && pip install gunicorn
